@@ -2,6 +2,8 @@
 
 A release and launch tracker for small software teams, built with Next.js and SQLite.
 
+**Live demo:** https://shipyard-demo.vercel.app (public pages; demo data resets periodically)
+
 **Public pages**
 - `/` Roadmap: planned, in-progress and in-review releases, plus anything shipped in the last 3 weeks. Recent rollbacks are flagged at the top. Filter by product.
 - `/releases/[id]` One release: description, checklist, attachments and its full audit timeline.
