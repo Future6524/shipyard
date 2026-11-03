@@ -1,37 +1,46 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Inter } from "next/font/google";
+import { Bebas_Neue, Geist_Mono, Poppins } from "next/font/google";
 import { NavLinks } from "@/components/NavLinks";
 import "./globals.css";
 
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const display = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-display" });
+const condensed = Bebas_Neue({ subsets: ["latin"], weight: "400", variable: "--font-condensed" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: { default: "Shipyard", template: "%s · Shipyard" },
   description: "Roadmap, release timelines and changelog for our products.",
 };
 
-export const viewport: Viewport = { themeColor: "#ffffff" };
+export const viewport: Viewport = { themeColor: "#0b0b0b" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={sans.variable}>
+    <html lang="en" className={`${display.variable} ${condensed.variable} ${mono.variable}`}>
       <body>
+        <a href="#main" className="skip">
+          Skip to content
+        </a>
         <header className="site-header">
           <div className="wrap header-inner">
-            <Link href="/" className="brand">
-              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
-                <rect width="24" height="24" rx="6" fill="var(--indigo)" />
-                <path d="M5 15h14l-2.5 4h-9L5 15Zm6-9 5 7h-5V6Zm-1 2v5H6.5L10 8Z" fill="#fff" />
-              </svg>
-              Shipyard
+            <Link href="/" className="brand" aria-label="Shipyard home">
+              <span className="brand-box">shipyard</span>
+              <span className="brand-dot" aria-hidden />
             </Link>
             <NavLinks />
           </div>
         </header>
-        <main className="wrap main">{children}</main>
+        <main id="main" className="main">
+          {children}
+        </main>
         <footer className="site-footer">
-          <div className="wrap">Every change to a release is recorded in an append-only, timestamped audit log.</div>
+          <div className="wrap footer-inner">
+            <span className="footer-word" aria-hidden>
+              shipyard
+            </span>
+            <p>Every change to a release is written to an append-only, timestamped audit log. Nothing is ever edited after the fact.</p>
+          </div>
         </footer>
       </body>
     </html>

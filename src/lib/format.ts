@@ -42,3 +42,22 @@ export const initials = (name: string) =>
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+const AVATAR_TONES = [
+  ["#0b0b0b", "#ffffff"],
+  ["#e0157a", "#ffffff"],
+  ["#c6ff3d", "#0b0b0b"],
+  ["#2a6be0", "#ffffff"],
+  ["#ffffff", "#0b0b0b"],
+  ["#ffd400", "#0b0b0b"],
+];
+
+/** A stable background + ink pair for a person's avatar, derived from their name. */
+export function avatarColor(name: string) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const [bg, fg] = AVATAR_TONES[h % AVATAR_TONES.length];
+  return { bg, fg };
+}
+
+export const firstName = (name: string) => name.split(/\s+/)[0];

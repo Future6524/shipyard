@@ -1,4 +1,5 @@
 import { adminPassword } from "@/lib/auth";
+import { Orb } from "@/components/ui";
 import { LoginForm } from "./LoginForm";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +8,9 @@ export const metadata = { title: "Sign in" };
 export default function LoginPage() {
   return (
     <div className="auth">
-      <div className="card auth-card">
+      <Orb className="orb-auth" />
+      <div className="card auth-card reveal">
+        <p className="kicker kicker-dark">Admin</p>
         <h1>Sign in to Shipyard</h1>
         {adminPassword() ? (
           <LoginForm />

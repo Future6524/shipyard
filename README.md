@@ -33,6 +33,17 @@ A release and launch tracker for small software teams, built with Next.js and SQ
 
 </details>
 
+## Design
+
+The UI borrows the language of motion-graphics showreels:
+- **Panels:** black/white split panels on a studio-grey backdrop, with halftone dot grids and slanted bars.
+- **Type:** heavy geometric type (Poppins 800/900) with outlined lettering, plus condensed captions (Bebas Neue).
+- **Numbers:** white "price tag" boxes with hard shadows.
+- **Accents:** hot magenta, with lime for shipped.
+- **Motion:** slowly spinning iridescent orbs, a live activity marquee and staggered reveals. All of it is CSS-only and switched off under `prefers-reduced-motion`.
+
+Product colours (magenta, blue, amber) are validated as a colour-blind-safe categorical set, and every chart has a data-table view.
+
 ## Statuses
 
 ```
@@ -89,7 +100,8 @@ Files are stored in the database and served from `/api/files/[id]` with immutabl
 src/lib/db.ts           schema, append-only triggers, state views, connection
 src/lib/releases.ts     queries + transition rules (createRelease, recordChange)
 src/lib/seed.ts         3 fictional products, ~a year of release history
-src/lib/palette.ts      product colors (validated colorblind-safe categorical slots)
+src/lib/palette.ts      product colors (validated colour-blind-safe categorical set)
+src/lib/stats.ts        shared time-to-ship maths (roadmap hero + stats page)
 src/lib/auth.ts         team password + signed session carrying the actor's name
 src/proxy.ts            redirects unauthenticated /admin requests
 src/components/Charts.tsx  stacked columns and bar chart with tooltips

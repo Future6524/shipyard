@@ -148,6 +148,7 @@ function Legend({ series }: { series: Series[] }) {
         <li key={s.name}>
           <span className="swatch" style={{ background: s.color }} aria-hidden />
           {s.name}
+          <span className="legend-total">{s.values.reduce((a, b) => a + b, 0)}</span>
         </li>
       ))}
     </ul>

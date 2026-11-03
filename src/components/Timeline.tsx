@@ -1,18 +1,35 @@
-import { fmtBytes, fmtDate, fmtDateTime } from "@/lib/format";
+import {
+  ArrowRightLeft,
+  CalendarClock,
+  CheckCheck,
+  CircleCheck,
+  Download,
+  ListPlus,
+  MessageSquareQuote,
+  Paperclip,
+  RotateCcw,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { fmtBytes, fmtDate } from "@/lib/format";
 import type { ReleaseEvent, Status } from "@/lib/types";
 import { Avatar, StatusPill } from "./ui";
 
-const ICON: Record<ReleaseEvent["kind"], string> = {
-  CREATED: "✦",
-  STATUS: "→",
-  CHECKED: "✓",
-  UNCHECKED: "↺",
-  ITEM_ADDED: "+",
-  OWNER: "⇄",
-  TARGET_DATE: "◷",
-  ATTACHMENT: "⎙",
-  NOTE: "❝",
+const ICON: Record<ReleaseEvent["kind"], LucideIcon> = {
+  CREATED: Sparkles,
+  STATUS: ArrowRightLeft,
+  CHECKED: CircleCheck,
+  UNCHECKED: RotateCcw,
+  ITEM_ADDED: ListPlus,
+  OWNER: ArrowRightLeft,
+  TARGET_DATE: CalendarClock,
+  ATTACHMENT: Paperclip,
+  NOTE: MessageSquareQuote,
 };
+
+const dayFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const timeFmt = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" });
+const time = (iso: string) => `${timeFmt.format(new Date(iso))} UTC`;
 
 function Summary({ e }: { e: ReleaseEvent }) {
   const who = <strong>{e.actor}</strong>;
@@ -27,7 +44,11 @@ function Summary({ e }: { e: ReleaseEvent }) {
     case "STATUS":
       return (
         <>
-          {who} moved it {e.from_value && <StatusPill status={e.from_value as Status} />} → <StatusPill status={e.status} />
+          {who} moved it {e.from_value && <StatusPill status={e.from_value as Status} size="sm" />}
+          <span className="arrow" aria-hidden>
+            →
+          </span>
+          <StatusPill status={e.status} size="sm" />
         </>
       );
     case "CHECKED":
@@ -72,31 +93,99 @@ function Summary({ e }: { e: ReleaseEvent }) {
   }
 }
 
-/** The release's audit log, newest first. Entries are rendered exactly as recorded. */
+type Row = { type: "event"; e: ReleaseEvent } | { type: "ticks"; actor: string; events: ReleaseEvent[] };
+
+/**
+ * Newest-first, grouped by day. Runs of checklist ticks by one person on one day fold into
+ * a single expandable row; every underlying entry is still listed when expanded.
+ */
+function groupByDay(events: ReleaseEvent[]) {
+  const days: { day: string; rows: Row[] }[] = [];
+  for (const e of [...events].reverse()) {
+    const day = dayFmt.format(new Date(e.created_at));
+    if (days.at(-1)?.day !== day) days.push({ day, rows: [] });
+    const rows = days.at(-1)!.rows;
+    const prev = rows.at(-1);
+    if (e.kind === "CHECKED") {
+      if (prev?.type === "ticks" && prev.actor === e.actor) {
+        prev.events.push(e);
+        continue;
+      }
+      if (prev?.type === "event" && prev.e.kind === "CHECKED" && prev.e.actor === e.actor) {
+        rows[rows.length - 1] = { type: "ticks", actor: e.actor, events: [prev.e, e] };
+        continue;
+      }
+    }
+    rows.push({ type: "event", e });
+  }
+  return days;
+}
+
+function Entry({ e }: { e: ReleaseEvent }) {
+  const Icon = ICON[e.kind];
+  return (
+    <li className={`tl tl-${e.kind.toLowerCase()} ${e.kind === "STATUS" ? `tl-to-${e.status.toLowerCase()}` : ""}`}>
+      <span className="tl-icon" aria-hidden>
+        <Icon size={15} strokeWidth={2.5} />
+      </span>
+      <div className="tl-body">
+        <div className="tl-line">
+          <Avatar name={e.actor} size={22} />
+          <span className="tl-text">
+            <Summary e={e} />
+          </span>
+          <time className="tl-time" dateTime={e.created_at}>
+            {time(e.created_at)}
+          </time>
+        </div>
+        {e.note && <blockquote className="tl-note">{e.note}</blockquote>}
+        {e.files.length > 0 && <FileList files={e.files} />}
+      </div>
+    </li>
+  );
+}
+
 export function Timeline({ events }: { events: ReleaseEvent[] }) {
   return (
-    <ol className="timeline">
-      {[...events].reverse().map((e) => (
-        <li key={e.id} className={`tl tl-${e.kind.toLowerCase()} ${e.kind === "STATUS" ? `tl-to-${e.status.toLowerCase()}` : ""}`}>
-          <span className="tl-icon" aria-hidden>
-            {ICON[e.kind]}
-          </span>
-          <div className="tl-body">
-            <div className="tl-line">
-              <Avatar name={e.actor} size={20} />
-              <span className="tl-text">
-                <Summary e={e} />
-              </span>
-              <time className="tl-time" dateTime={e.created_at} title={fmtDateTime(e.created_at)}>
-                {fmtDateTime(e.created_at)}
-              </time>
-            </div>
-            {e.note && <p className="tl-note">{e.note}</p>}
-            {e.files.length > 0 && <FileList files={e.files} />}
-          </div>
-        </li>
+    <div className="timeline">
+      {groupByDay(events).map(({ day, rows }) => (
+        <section key={day} className="tl-day">
+          <h3 className="tl-day-label">{day}</h3>
+          <ol>
+            {rows.map((row) =>
+              row.type === "event" ? (
+                <Entry key={row.e.id} e={row.e} />
+              ) : (
+                <li key={row.events[0].id} className="tl tl-checked tl-group">
+                  <span className="tl-icon" aria-hidden>
+                    <CheckCheck size={15} strokeWidth={2.5} />
+                  </span>
+                  <details className="tl-body">
+                    <summary className="tl-line">
+                      <Avatar name={row.actor} size={22} />
+                      <span className="tl-text">
+                        <strong>{row.actor}</strong> ticked off {row.events.length} items
+                      </span>
+                      <time className="tl-time" dateTime={row.events[0].created_at}>
+                        {time(row.events.at(-1)!.created_at)}–{time(row.events[0].created_at)}
+                      </time>
+                    </summary>
+                    <ul className="tl-sub">
+                      {row.events.map((e) => (
+                        <li key={e.id}>
+                          <CircleCheck aria-hidden size={13} /> <q>{e.item_label}</q>
+                          <time dateTime={e.created_at}>{time(e.created_at)}</time>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                </li>
+              ),
+            )}
+          </ol>
+        </section>
       ))}
-    </ol>
+    </div>
   );
 }
 
@@ -117,10 +206,11 @@ export function FileList({ files }: { files: ReleaseEvent["files"] }) {
       )}
       {others.map((f) => (
         <a key={f.id} href={`/api/files/${f.id}`} className="file-chip" download={f.name}>
-          <span aria-hidden>📄</span> {f.name} <span className="muted">{fmtBytes(f.size)}</span>
+          <Download aria-hidden size={14} strokeWidth={2.5} />
+          <span className="file-name">{f.name}</span>
+          <span className="muted">{fmtBytes(f.size)}</span>
         </a>
       ))}
     </div>
   );
 }
-
